@@ -1,137 +1,237 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Humphreys Hill Attend</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <title>Humphreys Hill House | AttendPro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#062c22">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <header>
-    <div>
-      <h1>Humphreys Hill Attend</h1>
-      <p>Smart Attendance for Every Event</p>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logoMark">HH</div>
+      <div>
+        <h1>Humphreys Hill</h1>
+        <p>AttendPro</p>
+      </div>
     </div>
-    <nav>
-      <button onclick="showSection('dashboard')">Dashboard</button>
-      <button onclick="showSection('events')">Events</button>
-      <button onclick="showSection('register')">Register</button>
-      <button onclick="showSection('scan')">Scan</button>
-      <button onclick="showSection('reports')">Reports</button>
+
+    <nav class="menu">
+      <button class="active" data-page="dashboard">Dashboard</button>
+      <button data-page="events">Events</button>
+      <button data-page="register">Registration</button>
+      <button data-page="checkin">QR Check-in</button>
+      <button data-page="badges">Badges</button>
+      <button data-page="reports">Reports</button>
+      <button data-page="privacy">Data Protection</button>
+      <button data-page="audit">Audit Logs</button>
+      <button data-page="settings">Settings</button>
     </nav>
-  </header>
 
-  <main>
-    <section id="dashboard" class="section active">
-      <h2>Dashboard</h2>
-      <div class="stats">
-        <div class="stat-card"><h3 id="totalEvents">0</h3><p>Events</p></div>
-        <div class="stat-card"><h3 id="totalParticipants">0</h3><p>Participants</p></div>
-        <div class="stat-card"><h3 id="totalAttendance">0</h3><p>Check-ins</p></div>
+    <div class="security-card">
+      <strong>Security Mode</strong>
+      <span>ISO 27001-ready controls</span>
+      <span>Kenya Data Protection-ready</span>
+      <span>GDPR-aligned privacy tools</span>
+      <small>This demo is not a certification claim.</small>
+    </div>
+  </aside>
+
+  <section class="app">
+    <header class="topbar">
+      <button id="mobileMenu">☰</button>
+      <div>
+        <strong id="pageTitle">Dashboard</strong>
+        <span>Hotel-grade attendance management for every event</span>
       </div>
-      <div class="card">
-        <h3>About the System</h3>
-        <p>This system manages attendance for conferences, meetings, workshops, trainings, seminars, AGMs, hotel events, corporate events, and university activities.</p>
+      <div class="top-actions">
+        <button id="installBtn" class="ghost">Install App</button>
+        <button id="themeBtn" class="ghost">Theme</button>
+        <button id="lockBtn" class="primary">Secure Vault</button>
       </div>
-    </section>
+    </header>
 
-    <section id="events" class="section">
-      <h2>Create Event</h2>
-      <div class="card">
-        <label>Event Name</label>
-        <input id="eventName" placeholder="Example: Annual Leadership Conference">
+    <main>
+      <section id="dashboard" class="page active">
+        <div class="hero">
+          <div class="heroOverlay">
+            <span class="pill">Humphreys Hill House • Kisii</span>
+            <h2>Elevate every event. Capture every moment.</h2>
+            <p>A premium attendance system for conferences, meetings, trainings, workshops, AGMs, hotel events and corporate functions.</p>
+            <div class="hero-actions">
+              <button class="gold" onclick="goTo('events')">Create Event</button>
+              <button class="glass" onclick="goTo('checkin')">Start Check-in</button>
+            </div>
+          </div>
+        </div>
 
-        <label>Event Type</label>
-        <select id="eventType">
-          <option>Conference</option>
-          <option>Meeting</option>
-          <option>Training</option>
-          <option>Workshop</option>
-          <option>Seminar</option>
-          <option>AGM</option>
-          <option>Corporate Event</option>
-          <option>University Event</option>
-          <option>Other</option>
-        </select>
+        <div class="stats">
+          <div class="stat"><span>Total Events</span><strong id="statEvents">0</strong><small>managed activities</small></div>
+          <div class="stat"><span>Participants</span><strong id="statParticipants">0</strong><small>registered guests</small></div>
+          <div class="stat"><span>Check-ins</span><strong id="statCheckins">0</strong><small>verified attendance</small></div>
+          <div class="stat"><span>Attendance Rate</span><strong id="statRate">0%</strong><small>event conversion</small></div>
+        </div>
 
-        <label>Venue</label>
-        <input id="eventVenue" value="Humphreys Hill House">
+        <div class="grid two">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Attendance Analytics</h3>
+              <button class="ghost" onclick="refreshAll()">Refresh</button>
+            </div>
+            <canvas id="attendanceChart"></canvas>
+          </div>
 
-        <label>Start Date</label>
-        <input id="startDate" type="date">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Live Check-ins</h3>
+              <button class="ghost" onclick="goTo('reports')">View all</button>
+            </div>
+            <div id="liveFeed" class="feed"></div>
+          </div>
+        </div>
 
-        <label>End Date</label>
-        <input id="endDate" type="date">
+        <div class="quick-actions">
+          <button onclick="goTo('checkin')"><b>QR Check-in</b><span>Scan participant QR code</span></button>
+          <button onclick="goTo('register')"><b>Add Participant</b><span>Register guest details</span></button>
+          <button onclick="goTo('badges')"><b>Generate Badge</b><span>Print premium badges</span></button>
+          <button onclick="goTo('reports')"><b>Reports</b><span>Export CSV reports</span></button>
+        </div>
+      </section>
 
-        <button class="primary" onclick="createEvent()">Save Event</button>
-      </div>
+      <section id="events" class="page">
+        <div class="panel">
+          <h2>Create Event</h2>
+          <div class="form-grid">
+            <label>Event Name<input id="eventName" placeholder="Annual Leadership Conference"></label>
+            <label>Event Type
+              <select id="eventType">
+                <option>Conference</option><option>Meeting</option><option>Training</option>
+                <option>Workshop</option><option>Seminar</option><option>AGM</option>
+                <option>Corporate Event</option><option>University Event</option><option>Religious Event</option>
+              </select>
+            </label>
+            <label>Venue<input id="eventVenue" value="Humphreys Hill House, Kisii"></label>
+            <label>Organizer<input id="eventOrganizer" placeholder="Organizer / Client"></label>
+            <label>Start Date<input id="startDate" type="date"></label>
+            <label>End Date<input id="endDate" type="date"></label>
+            <label>Data Retention Days<input id="retentionDays" type="number" value="365"></label>
+            <label>Consent Required
+              <select id="consentRequired"><option value="yes">Yes</option><option value="no">No</option></select>
+            </label>
+          </div>
+          <button class="primary" onclick="createEvent()">Save Event</button>
+        </div>
+        <div id="eventCards" class="cards"></div>
+      </section>
 
-      <h2>Saved Events</h2>
-      <div id="eventList"></div>
-    </section>
+      <section id="register" class="page">
+        <div class="panel">
+          <h2>Participant Registration</h2>
+          <div class="form-grid">
+            <label>Event<select id="participantEvent"></select></label>
+            <label>Full Name<input id="fullName" placeholder="Full name"></label>
+            <label>Email<input id="email" type="email" placeholder="email@example.com"></label>
+            <label>Phone<input id="phone" placeholder="+254..."></label>
+            <label>Organization<input id="organization" placeholder="Institution / Company"></label>
+            <label>Role
+              <select id="role"><option>Participant</option><option>Speaker</option><option>Trainer</option><option>Guest</option><option>Organizer</option><option>VIP</option></select>
+            </label>
+            <label>Access Level
+              <select id="accessLevel"><option>Standard</option><option>VIP</option><option>Staff</option><option>Restricted</option></select>
+            </label>
+            <label>Consent
+              <select id="consent"><option value="yes">Consent given</option><option value="no">No consent</option></select>
+            </label>
+          </div>
+          <button class="primary" onclick="registerParticipant()">Register & Generate QR</button>
+        </div>
+        <div id="participantCards" class="cards"></div>
+      </section>
 
-    <section id="register" class="section">
-      <h2>Register Participant</h2>
-      <div class="card">
-        <label>Select Event</label>
-        <select id="participantEvent"></select>
+      <section id="checkin" class="page">
+        <div class="grid two">
+          <div class="panel">
+            <h2>QR Camera Check-in</h2>
+            <label>Session Name<input id="sessionName" placeholder="Opening Session"></label>
+            <div class="scan-actions">
+              <button class="primary" onclick="startScanner()">Start Scanner</button>
+              <button class="ghost" onclick="stopScanner()">Stop Scanner</button>
+            </div>
+            <div id="reader"></div>
+          </div>
+          <div class="panel">
+            <h2>Manual Secure Check-in</h2>
+            <label>QR Value<input id="manualQr" placeholder="HHH|EVENT|PARTICIPANT"></label>
+            <button class="gold" onclick="manualCheckIn()">Check In</button>
+            <div id="checkinResult" class="notice"></div>
+          </div>
+        </div>
+      </section>
 
-        <label>Full Name</label>
-        <input id="fullName" placeholder="Participant full name">
+      <section id="badges" class="page">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Premium Badge Studio</h2>
+            <button class="primary" onclick="printAllBadges()">Print All Badges</button>
+          </div>
+          <div id="badgeStudio" class="badge-grid"></div>
+        </div>
+      </section>
 
-        <label>Email</label>
-        <input id="email" type="email" placeholder="email@example.com">
+      <section id="reports" class="page">
+        <div class="panel">
+          <h2>Reports & Exports</h2>
+          <div class="report-actions">
+            <button class="primary" onclick="downloadAttendanceCSV()">Attendance CSV</button>
+            <button onclick="downloadParticipantsCSV()">Participants CSV</button>
+            <button onclick="downloadEventsCSV()">Events CSV</button>
+            <button onclick="downloadJSON()">Full Backup JSON</button>
+          </div>
+        </div>
+        <div id="attendanceTable"></div>
+      </section>
 
-        <label>Phone</label>
-        <input id="phone" placeholder="Phone number">
+      <section id="privacy" class="page">
+        <div class="panel">
+          <h2>Data Protection Centre</h2>
+          <p>This demo includes privacy-by-design controls: consent recording, retention period, access-level tagging, audit logs, export, deletion and local encrypted vault option.</p>
+          <div class="compliance-grid">
+            <div><b>Lawful basis</b><span>Consent captured during registration</span></div>
+            <div><b>Data minimisation</b><span>Collect only event attendance details</span></div>
+            <div><b>Retention</b><span>Retention days configured per event</span></div>
+            <div><b>Access control</b><span>Admin/operator role design</span></div>
+            <div><b>Auditability</b><span>Key actions are logged</span></div>
+            <div><b>Portability</b><span>CSV/JSON export supported</span></div>
+          </div>
+          <button class="danger" onclick="clearAllData()">Delete Local Demo Data</button>
+        </div>
+      </section>
 
-        <label>Organization</label>
-        <input id="organization" placeholder="Organization">
+      <section id="audit" class="page">
+        <div class="panel">
+          <h2>Audit Logs</h2>
+          <div id="auditLogs"></div>
+        </div>
+      </section>
 
-        <label>Role / Position</label>
-        <input id="position" placeholder="Participant, Speaker, Trainer, Guest">
+      <section id="settings" class="page">
+        <div class="panel">
+          <h2>System Settings</h2>
+          <label>Hotel Brand Name<input id="brandName" value="Humphreys Hill House"></label>
+          <label>System Name<input id="systemName" value="AttendPro"></label>
+          <button class="primary" onclick="saveSettings()">Save Settings</button>
+          <p class="hint">For a full production platform, connect this front-end to Firebase, Supabase or a Laravel/Django API with real authentication, database encryption and server backups.</p>
+        </div>
+      </section>
+    </main>
+  </section>
 
-        <button class="primary" onclick="registerParticipant()">Register and Generate QR</button>
-      </div>
-
-      <h2>Participants</h2>
-      <div id="participantList"></div>
-    </section>
-
-    <section id="scan" class="section">
-      <h2>Scan Attendance</h2>
-      <div class="card">
-        <label>Session Name</label>
-        <input id="sessionName" placeholder="Example: Opening Session">
-
-        <button class="primary" onclick="startScanner()">Start Camera Scanner</button>
-        <button onclick="stopScanner()">Stop Scanner</button>
-
-        <div id="reader"></div>
-
-        <h3>Manual Entry</h3>
-        <input id="manualQr" placeholder="Paste QR code value here">
-        <button class="primary" onclick="manualCheckIn()">Check In</button>
-      </div>
-    </section>
-
-    <section id="reports" class="section">
-      <h2>Reports</h2>
-      <div class="card">
-        <button class="primary" onclick="downloadCSV()">Download Attendance CSV</button>
-        <button onclick="downloadParticipantsCSV()">Download Participants CSV</button>
-        <button onclick="clearAllData()">Clear All Data</button>
-      </div>
-      <div id="attendanceList"></div>
-    </section>
-  </main>
-
-  <footer>
-    <p>Humphreys Hill Attend | Smart Attendance for Every Event</p>
-  </footer>
-
-  <script src="script.js"></script>
+  <div id="toast"></div>
+  <script src="app.js"></script>
 </body>
 </html>
