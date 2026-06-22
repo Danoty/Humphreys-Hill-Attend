@@ -1,0 +1,150 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f6f4;
+  color: #1f2933;
+}
+
+header {
+  background: #18392b;
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+header h1 {
+  margin: 0;
+}
+
+header p {
+  margin: 5px 0 0;
+}
+
+nav button {
+  background: white;
+  color: #18392b;
+  border: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+main {
+  width: 94%;
+  max-width: 1100px;
+  margin: 25px auto;
+}
+
+.section {
+  display: none;
+}
+
+.section.active {
+  display: block;
+}
+
+.card, .participant-card, .event-card {
+  background: white;
+  padding: 18px;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  margin-bottom: 18px;
+}
+
+label {
+  display: block;
+  margin-top: 14px;
+  font-weight: bold;
+}
+
+input, select {
+  width: 100%;
+  padding: 11px;
+  margin-top: 6px;
+  border: 1px solid #cbd5d1;
+  border-radius: 8px;
+}
+
+button {
+  padding: 10px 15px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.primary {
+  background: #18392b;
+  color: white;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.stat-card h3 {
+  font-size: 34px;
+  margin: 0;
+  color: #18392b;
+}
+
+.qr-box canvas {
+  margin-top: 12px;
+  max-width: 120px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+td, th {
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+#reader {
+  width: 100%;
+  max-width: 500px;
+  margin-top: 16px;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #52615a;
+}
+
+@media print {
+  header, nav, footer, button {
+    display: none;
+  }
+  .section {
+    display: block;
+  }
+}

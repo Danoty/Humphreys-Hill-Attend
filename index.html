@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Humphreys Hill Attend</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Humphreys Hill Attend</h1>
+      <p>Smart Attendance for Every Event</p>
+    </div>
+    <nav>
+      <button onclick="showSection('dashboard')">Dashboard</button>
+      <button onclick="showSection('events')">Events</button>
+      <button onclick="showSection('register')">Register</button>
+      <button onclick="showSection('scan')">Scan</button>
+      <button onclick="showSection('reports')">Reports</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="dashboard" class="section active">
+      <h2>Dashboard</h2>
+      <div class="stats">
+        <div class="stat-card"><h3 id="totalEvents">0</h3><p>Events</p></div>
+        <div class="stat-card"><h3 id="totalParticipants">0</h3><p>Participants</p></div>
+        <div class="stat-card"><h3 id="totalAttendance">0</h3><p>Check-ins</p></div>
+      </div>
+      <div class="card">
+        <h3>About the System</h3>
+        <p>This system manages attendance for conferences, meetings, workshops, trainings, seminars, AGMs, hotel events, corporate events, and university activities.</p>
+      </div>
+    </section>
+
+    <section id="events" class="section">
+      <h2>Create Event</h2>
+      <div class="card">
+        <label>Event Name</label>
+        <input id="eventName" placeholder="Example: Annual Leadership Conference">
+
+        <label>Event Type</label>
+        <select id="eventType">
+          <option>Conference</option>
+          <option>Meeting</option>
+          <option>Training</option>
+          <option>Workshop</option>
+          <option>Seminar</option>
+          <option>AGM</option>
+          <option>Corporate Event</option>
+          <option>University Event</option>
+          <option>Other</option>
+        </select>
+
+        <label>Venue</label>
+        <input id="eventVenue" value="Humphreys Hill House">
+
+        <label>Start Date</label>
+        <input id="startDate" type="date">
+
+        <label>End Date</label>
+        <input id="endDate" type="date">
+
+        <button class="primary" onclick="createEvent()">Save Event</button>
+      </div>
+
+      <h2>Saved Events</h2>
+      <div id="eventList"></div>
+    </section>
+
+    <section id="register" class="section">
+      <h2>Register Participant</h2>
+      <div class="card">
+        <label>Select Event</label>
+        <select id="participantEvent"></select>
+
+        <label>Full Name</label>
+        <input id="fullName" placeholder="Participant full name">
+
+        <label>Email</label>
+        <input id="email" type="email" placeholder="email@example.com">
+
+        <label>Phone</label>
+        <input id="phone" placeholder="Phone number">
+
+        <label>Organization</label>
+        <input id="organization" placeholder="Organization">
+
+        <label>Role / Position</label>
+        <input id="position" placeholder="Participant, Speaker, Trainer, Guest">
+
+        <button class="primary" onclick="registerParticipant()">Register and Generate QR</button>
+      </div>
+
+      <h2>Participants</h2>
+      <div id="participantList"></div>
+    </section>
+
+    <section id="scan" class="section">
+      <h2>Scan Attendance</h2>
+      <div class="card">
+        <label>Session Name</label>
+        <input id="sessionName" placeholder="Example: Opening Session">
+
+        <button class="primary" onclick="startScanner()">Start Camera Scanner</button>
+        <button onclick="stopScanner()">Stop Scanner</button>
+
+        <div id="reader"></div>
+
+        <h3>Manual Entry</h3>
+        <input id="manualQr" placeholder="Paste QR code value here">
+        <button class="primary" onclick="manualCheckIn()">Check In</button>
+      </div>
+    </section>
+
+    <section id="reports" class="section">
+      <h2>Reports</h2>
+      <div class="card">
+        <button class="primary" onclick="downloadCSV()">Download Attendance CSV</button>
+        <button onclick="downloadParticipantsCSV()">Download Participants CSV</button>
+        <button onclick="clearAllData()">Clear All Data</button>
+      </div>
+      <div id="attendanceList"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Humphreys Hill Attend | Smart Attendance for Every Event</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
