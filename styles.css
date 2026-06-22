@@ -24,3 +24,208 @@ main{padding:26px}.page{display:none}.page.active{display:block}
 .compliance-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:20px 0}.compliance-grid div{padding:18px;border:1px solid var(--line);border-radius:18px}.compliance-grid span{display:block;color:var(--muted);margin-top:8px}.hint{color:var(--muted)}#toast{position:fixed;right:25px;bottom:25px;background:var(--green);color:white;padding:14px 18px;border-radius:16px;box-shadow:var(--shadow);opacity:0;transform:translateY(20px);transition:.25s;z-index:30}#toast.show{opacity:1;transform:translateY(0)}
 @media(max-width:900px){.sidebar{transform:translateX(-100%);transition:.25s}.sidebar.open{transform:translateX(0)}.app{margin-left:0;width:100%}#mobileMenu{display:block}.stats,.quick-actions,.grid.two,.form-grid{grid-template-columns:1fr}.hero h2{font-size:36px}.topbar{padding:0 14px}.top-actions{display:none}}
 @media print{.sidebar,.topbar,.panel-head button,button{display:none!important}.app{margin:0;width:100%}.page{display:block}.badge{break-inside:avoid;box-shadow:none}}
+
+
+/* Login, logout and mobile upgrades */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background:
+    linear-gradient(135deg, rgba(3,30,23,.94), rgba(8,74,55,.72)),
+    url('assets/humphreys-hero.png') center/cover no-repeat;
+}
+
+.login-screen.hidden {
+  display: none;
+}
+
+.login-card {
+  width: min(430px, 100%);
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,.45);
+  border-radius: 28px;
+  padding: 30px;
+  box-shadow: 0 30px 90px rgba(0,0,0,.35);
+}
+
+.dark .login-card {
+  background: rgba(10,25,18,.92);
+}
+
+.login-logo {
+  margin: 0 auto 14px;
+}
+
+.login-card h1 {
+  margin: 0;
+  text-align: center;
+  font-family: Georgia, serif;
+}
+
+.login-card p {
+  text-align: center;
+  color: var(--muted);
+}
+
+.full {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.demo-accounts {
+  margin-top: 18px;
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+  border-radius: 16px;
+  background: rgba(6,44,34,.08);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.user-pill {
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--card);
+  font-size: 13px;
+}
+
+.install-help {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(200,155,60,.12);
+  border: 1px solid rgba(200,155,60,.35);
+}
+
+.install-help h3 {
+  margin-top: 0;
+}
+
+.install-help li {
+  margin: 8px 0;
+}
+
+/* Better cross-device compatibility */
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+img, canvas, video {
+  max-width: 100%;
+}
+
+@media(max-width:1100px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .quick-actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media(max-width:720px) {
+  body {
+    display: block;
+  }
+
+  .sidebar {
+    width: 86%;
+    max-width: 340px;
+  }
+
+  .topbar {
+    height: auto;
+    min-height: 72px;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .topbar > div:nth-child(2) {
+    flex: 1;
+  }
+
+  main {
+    padding: 14px;
+  }
+
+  .hero {
+    height: 420px;
+  }
+
+  .heroOverlay {
+    padding: 26px;
+  }
+
+  .hero h2 {
+    font-size: 34px;
+  }
+
+  .hero p {
+    font-size: 15px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .stats,
+  .quick-actions,
+  .grid.two,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel,
+  .stat,
+  .event-card,
+  .participant-card,
+  .badge {
+    border-radius: 18px;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .login-card {
+    padding: 22px;
+  }
+}
+
+@media(max-width:420px) {
+  .brand h1 {
+    font-size: 18px;
+  }
+
+  .hero h2 {
+    font-size: 29px;
+  }
+
+  .stat strong {
+    font-size: 28px;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  .menu button {
+    width: 100%;
+  }
+}

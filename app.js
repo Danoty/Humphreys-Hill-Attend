@@ -1,3 +1,93 @@
+
+const users = [
+  { username: "admin", password: "admin123", name: "Administrator", role: "Admin" },
+  { username: "scanner", password: "scan123", name: "Check-in Officer", role: "Check-in Officer" }
+];
+
+function getSessionUser() {
+  return JSON.parse(sessionStorage.getItem("hhh_logged_user") || "null");
+}
+
+function login() {
+  const username = $("loginUsername").value.trim();
+  const password = $("loginPassword").value;
+  const found = users.find(u => u.username === username && u.password === password);
+
+  if (!found) {
+    toast("Invalid login details.");
+    return;
+  }
+
+  sessionStorage.setItem("hhh_logged_user", JSON.stringify({
+    username: found.username,
+    name: found.name,
+    role: found.role
+  }));
+
+  log("LOGIN", found.name + " logged in as " + found.role);
+  applyAuth();
+  toast("Welcome, " + found.name);
+}
+
+function logout() {
+  const user = getSessionUser();
+  if (user) log("LOGOUT", user.name + " logged out.");
+  sessionStorage.removeItem("hhh_logged_user");
+  applyAuth();
+}
+
+function applyAuth() {
+  const user = getSessionUser();
+  const loginScreen = $("loginScreen");
+  const currentUser = $("currentUser");
+
+  if (!user) {
+    loginScreen.classList.remove("hidden");
+    if (currentUser) currentUser.textContent = "Not logged in";
+    return;
+  }
+
+  loginScreen.classList.add("hidden");
+  if (currentUser) currentUser.textContent = user.name + " • " + user.role;
+
+  const restrictedPages = ["events", "register", "badges", "reports", "privacy", "audit", "settings"];
+  document.querySelectorAll(".menu button").forEach(btn => {
+    if (user.role === "Check-in Officer" && restrictedPages.includes(btn.dataset.page)) {
+      btn.style.display = "none";
+    } else {
+      btn.style.display = "";
+    }
+  });
+
+  if (user.role === "Check-in Officer") {
+    goTo("checkin");
+  }
+}
+
+function requireAdmin() {
+  const user = getSessionUser();
+  if (!user) {
+    toast("Please login first.");
+    applyAuth();
+    return false;
+  }
+  if (user.role !== "Admin") {
+    toast("Admin permission required.");
+    return false;
+  }
+  return true;
+}
+
+function requireLogin() {
+  const user = getSessionUser();
+  if (!user) {
+    toast("Please login first.");
+    applyAuth();
+    return false;
+  }
+  return true;
+}
+
 let scanner=null, chart=null, deferredInstall=null;
 const $=id=>document.getElementById(id);
 const store={events:"hhh_events",participants:"hhh_participants",attendance:"hhh_attendance",audit:"hhh_audit",settings:"hhh_settings"};
@@ -17,14 +107,14 @@ $("installBtn").onclick=()=>deferredInstall&&deferredInstall.prompt();
 
 function goTo(page){document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));$(page).classList.add("active");document.querySelectorAll(".menu button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));$("pageTitle").textContent=page.charAt(0).toUpperCase()+page.slice(1);refreshAll();}
 
-function createEvent(){
+function createEvent(){ if(!requireAdmin()) return;
  const e={id:"EVT-"+Date.now(),name:$("eventName").value.trim(),type:$("eventType").value,venue:$("eventVenue").value.trim(),organizer:$("eventOrganizer").value.trim(),start:$("startDate").value,end:$("endDate").value,retentionDays:$("retentionDays").value||365,consentRequired:$("consentRequired").value,createdAt:new Date().toISOString()};
  if(!e.name||!e.start||!e.end)return toast("Fill event name and dates.");
  const events=read("events");events.unshift(e);write("events",events);log("CREATE_EVENT",e.name);toast("Event created.");refreshAll();
  ["eventName","eventOrganizer","startDate","endDate"].forEach(id=>$(id).value="");
 }
 
-function registerParticipant(){
+function registerParticipant(){ if(!requireAdmin()) return;
  const p={id:"P-"+Date.now(),eventId:$("participantEvent").value,fullName:$("fullName").value.trim(),email:$("email").value.trim(),phone:$("phone").value.trim(),organization:$("organization").value.trim(),role:$("role").value,accessLevel:$("accessLevel").value,consent:$("consent").value,qrValue:"HHH|"+$("participantEvent").value+"|P-"+Date.now(),createdAt:new Date().toISOString()};
  if(!p.eventId||!p.fullName)return toast("Select event and enter name.");
  if(p.consent==="no")return toast("Consent is required before registration.");
@@ -32,7 +122,7 @@ function registerParticipant(){
  ["fullName","email","phone","organization"].forEach(id=>$(id).value="");refreshAll();
 }
 
-function checkIn(qr){
+function checkIn(qr){ if(!requireLogin()) return;
  const bits=qr.split("|"); if(bits.length!==3||bits[0]!=="HHH")return toast("Invalid QR.");
  const [_,eventId,participantId]=bits, session=$("sessionName").value.trim()||"Main Session";
  const p=read("participants").find(x=>x.id===participantId&&x.eventId===eventId); if(!p)return toast("Participant not found.");
@@ -56,14 +146,23 @@ function renderFeed(){const a=read("attendance").slice(0,5),ps=read("participant
 function renderChart(){const a=read("attendance");const labels=[...new Set(a.map(x=>x.session))].slice(0,8);const data=labels.map(l=>a.filter(x=>x.session===l).length);const ctx=$("attendanceChart");if(!ctx)return;if(chart)chart.destroy();chart=new Chart(ctx,{type:"line",data:{labels:labels.length?labels:["No data"],datasets:[{label:"Check-ins",data:data.length?data:[0],tension:.35,fill:true}]},options:{responsive:true,plugins:{legend:{display:false}}}});}
 function rowsToCSV(rows){return rows.map(r=>r.map(v=>`"${String(v||"").replaceAll('"','""')}"`).join(",")).join("\n")}
 function download(name,content,type="text/csv"){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
-function downloadAttendanceCSV(){const a=read("attendance"),ps=read("participants"),ev=read("events");download("humphreys_attendance.csv",rowsToCSV([["Name","Event","Session","Time","Operator"],...a.map(r=>{const p=ps.find(x=>x.id===r.participantId),e=ev.find(x=>x.id===r.eventId);return[p?.fullName,e?.name,r.session,r.time,r.operator]})]));}
-function downloadParticipantsCSV(){const ps=read("participants"),ev=read("events");download("humphreys_participants.csv",rowsToCSV([["Name","Event","Email","Phone","Organization","Role","Access","Consent","QR"],...ps.map(p=>[p.fullName,ev.find(e=>e.id===p.eventId)?.name,p.email,p.phone,p.organization,p.role,p.accessLevel,p.consent,p.qrValue])]));}
-function downloadEventsCSV(){download("humphreys_events.csv",rowsToCSV([["Name","Type","Venue","Organizer","Start","End","Retention"],...read("events").map(e=>[e.name,e.type,e.venue,e.organizer,e.start,e.end,e.retentionDays])]));}
-function downloadJSON(){download("humphreys_backup.json",JSON.stringify({events:read("events"),participants:read("participants"),attendance:read("attendance"),audit:read("audit")},null,2),"application/json")}
-function clearAllData(){if(confirm("Delete all local demo data?")){Object.values(store).forEach(k=>localStorage.removeItem(k));refreshAll();toast("Local data deleted.")}}
-function saveSettings(){toast("Settings saved.");log("SAVE_SETTINGS","Brand settings updated.")}
-async function secureVault(){const pass=prompt("Set/enter a vault passphrase for this browser demo:");if(!pass)return;const data=new TextEncoder().encode(JSON.stringify({events:read("events"),participants:read("participants"),attendance:read("attendance")}));const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(pass));const key=await crypto.subtle.importKey("raw",digest,{name:"AES-GCM"},false,["encrypt"]);const iv=crypto.getRandomValues(new Uint8Array(12));const encrypted=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,data);localStorage.setItem("hhh_vault",JSON.stringify({iv:Array.from(iv),data:Array.from(new Uint8Array(encrypted))}));log("SECURE_VAULT","Encrypted local backup created.");toast("Encrypted vault backup created.");}
+function downloadAttendanceCSV(){ if(!requireAdmin()) return;const a=read("attendance"),ps=read("participants"),ev=read("events");download("humphreys_attendance.csv",rowsToCSV([["Name","Event","Session","Time","Operator"],...a.map(r=>{const p=ps.find(x=>x.id===r.participantId),e=ev.find(x=>x.id===r.eventId);return[p?.fullName,e?.name,r.session,r.time,r.operator]})]));}
+function downloadParticipantsCSV(){ if(!requireAdmin()) return;const ps=read("participants"),ev=read("events");download("humphreys_participants.csv",rowsToCSV([["Name","Event","Email","Phone","Organization","Role","Access","Consent","QR"],...ps.map(p=>[p.fullName,ev.find(e=>e.id===p.eventId)?.name,p.email,p.phone,p.organization,p.role,p.accessLevel,p.consent,p.qrValue])]));}
+function downloadEventsCSV(){ if(!requireAdmin()) return;download("humphreys_events.csv",rowsToCSV([["Name","Type","Venue","Organizer","Start","End","Retention"],...read("events").map(e=>[e.name,e.type,e.venue,e.organizer,e.start,e.end,e.retentionDays])]));}
+function downloadJSON(){ if(!requireAdmin()) return;download("humphreys_backup.json",JSON.stringify({events:read("events"),participants:read("participants"),attendance:read("attendance"),audit:read("audit")},null,2),"application/json")}
+function clearAllData(){ if(!requireAdmin()) return;if(confirm("Delete all local demo data?")){Object.values(store).forEach(k=>localStorage.removeItem(k));refreshAll();toast("Local data deleted.")}}
+function saveSettings(){ if(!requireAdmin()) return;toast("Settings saved.");log("SAVE_SETTINGS","Brand settings updated.")}
+async function secureVault(){ if(!requireAdmin()) return;const pass=prompt("Set/enter a vault passphrase for this browser demo:");if(!pass)return;const data=new TextEncoder().encode(JSON.stringify({events:read("events"),participants:read("participants"),attendance:read("attendance")}));const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(pass));const key=await crypto.subtle.importKey("raw",digest,{name:"AES-GCM"},false,["encrypt"]);const iv=crypto.getRandomValues(new Uint8Array(12));const encrypted=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,data);localStorage.setItem("hhh_vault",JSON.stringify({iv:Array.from(iv),data:Array.from(new Uint8Array(encrypted))}));log("SECURE_VAULT","Encrypted local backup created.");toast("Encrypted vault backup created.");}
 function printBadge(id){goTo("badges");setTimeout(()=>window.print(),300)}
-function printAllBadges(){window.print()}
+function printAllBadges(){ if(!requireAdmin()) return;window.print()}
 if("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(()=>{});
 refreshAll();
+
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Enter" && !$("loginScreen").classList.contains("hidden")) {
+    login();
+  }
+});
+
+applyAuth();

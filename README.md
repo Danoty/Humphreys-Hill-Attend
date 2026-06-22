@@ -62,3 +62,41 @@ For a full production system, connect this front-end to:
 - Data Processing Agreement and Privacy Notice
 - HTTPS-only hosting
 - Regular backups
+
+
+## New Upgrade Added
+
+### Login and Logout
+
+Demo accounts:
+
+- Admin: `admin` / `admin123`
+- Check-in Officer: `scanner` / `scan123`
+
+Admin can manage the whole system.  
+Check-in Officer can only access the QR check-in area.
+
+### Android Installation
+
+After hosting on GitHub Pages:
+
+1. Open the live system link using Chrome on Android.
+2. Tap the three dots menu.
+3. Tap **Install app** or **Add to Home screen**.
+4. The system will appear like an Android app.
+
+### Device Compatibility
+
+The system has been upgraded for:
+
+- Android phones
+- Tablets
+- Laptops
+- Desktop screens
+- Touch devices
+- GitHub Pages hosting
+- Offline-first PWA caching
+
+### Security Note
+
+This is still a front-end GitHub Pages demo. For real production security, the login should be moved to a secure backend such as Firebase Auth, Supabase Auth, Laravel, Django, or Node.js with encrypted database storage.

@@ -12,6 +12,31 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+
+  <section id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="logoMark login-logo">HH</div>
+      <h1>Humphreys Hill House</h1>
+      <p>AttendPro Secure Access</p>
+
+      <label>Username
+        <input id="loginUsername" autocomplete="username" placeholder="admin">
+      </label>
+
+      <label>Password
+        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="admin123">
+      </label>
+
+      <button class="primary full" onclick="login()">Login</button>
+
+      <div class="demo-accounts">
+        <strong>Demo Accounts</strong>
+        <span>Admin: <b>admin</b> / <b>admin123</b></span>
+        <span>Check-in Officer: <b>scanner</b> / <b>scan123</b></span>
+      </div>
+    </div>
+  </section>
+
   <aside class="sidebar">
     <div class="brand">
       <div class="logoMark">HH</div>
@@ -50,9 +75,11 @@
         <span>Hotel-grade attendance management for every event</span>
       </div>
       <div class="top-actions">
+        <span id="currentUser" class="user-pill">Not logged in</span>
         <button id="installBtn" class="ghost">Install App</button>
         <button id="themeBtn" class="ghost">Theme</button>
         <button id="lockBtn" class="primary">Secure Vault</button>
+        <button id="logoutBtn" class="danger" onclick="logout()">Logout</button>
       </div>
     </header>
 
@@ -225,6 +252,16 @@
           <label>Hotel Brand Name<input id="brandName" value="Humphreys Hill House"></label>
           <label>System Name<input id="systemName" value="AttendPro"></label>
           <button class="primary" onclick="saveSettings()">Save Settings</button>
+          <div class="install-help">
+            <h3>Install on Android Phone</h3>
+            <ol>
+              <li>Upload the system to GitHub Pages.</li>
+              <li>Open the live link in Chrome on Android.</li>
+              <li>Tap the three dots menu.</li>
+              <li>Select <b>Add to Home screen</b> or <b>Install app</b>.</li>
+              <li>The system will open like a mobile app.</li>
+            </ol>
+          </div>
           <p class="hint">For a full production platform, connect this front-end to Firebase, Supabase or a Laravel/Django API with real authentication, database encryption and server backups.</p>
         </div>
       </section>
