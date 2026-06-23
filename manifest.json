@@ -1,7 +1,6 @@
 {
   "name": "Humphreys Hill House AttendPro",
   "short_name": "HH AttendPro",
-  "description": "Attendance system with login, QR check-in, signatures and PDF reports.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

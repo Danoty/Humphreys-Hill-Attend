@@ -2,24 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Humphreys Hill House AttendPro</title>
+  <title>Login | Humphreys Hill AttendPro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#062c22">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
-<body>
-  <section id="loginPage" class="login-page">
+<body class="login-body">
+  <section class="login-page">
     <div class="login-card">
       <div class="logo">HH</div>
       <h1>Humphreys Hill House</h1>
-      <h2>AttendPro Secure Login</h2>
-      <label>Username <input id="username" value="admin" autocomplete="username"></label>
-      <label>Password <input id="password" type="password" value="admin123" autocomplete="current-password"></label>
+      <h2>AttendPro Login</h2>
+
+      <label>Username
+        <input id="username" value="admin" autocomplete="username">
+      </label>
+
+      <label>Password
+        <input id="password" type="password" value="admin123" autocomplete="current-password">
+      </label>
+
       <button id="loginBtn" class="primary">Login</button>
+
+      <p id="loginMessage"></p>
+
       <div class="login-info">
         <b>Demo Accounts</b>
         <span>Admin: admin / admin123</span>
@@ -28,148 +35,6 @@
     </div>
   </section>
 
-  <section id="appShell" class="app-shell hidden">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo small">HH</div>
-        <div><h3>Humphreys Hill</h3><p>AttendPro</p></div>
-      </div>
-      <nav>
-        <button data-page="dashboard" class="active">Dashboard</button>
-        <button data-page="events" class="admin-only">Events</button>
-        <button data-page="register" class="admin-only">Registration</button>
-        <button data-page="checkin">QR Check-in</button>
-        <button data-page="signatures">Signatures</button>
-        <button data-page="badges" class="admin-only">Badges</button>
-        <button data-page="reports" class="admin-only">PDF Reports</button>
-        <button data-page="privacy" class="admin-only">Data Protection</button>
-      </nav>
-      <div class="security">
-        <b>System Controls</b>
-        <span>Login/logout</span><span>QR attendance</span><span>Signature capture</span>
-        <span>PDF reports</span><span>Android installable</span>
-      </div>
-    </aside>
-
-    <main class="main">
-      <header class="topbar">
-        <button id="menuBtn">☰</button>
-        <div><b id="pageTitle">Dashboard</b><span id="currentUser">Logged in</span></div>
-        <div class="top-actions"><button id="installBtn">Install App</button><button id="logoutBtn" class="danger">Logout</button></div>
-      </header>
-
-      <section id="dashboard" class="page active">
-        <div class="hero">
-          <div>
-            <span class="pill">Humphreys Hill House • Kisii</span>
-            <h1>Smart Attendance for Every Event</h1>
-            <p>Manage events, QR check-in, participant signatures, badges, and PDF reports.</p>
-            <button onclick="showPage('events')" class="gold admin-action">Create Event</button>
-            <button onclick="showPage('checkin')" class="glass">Start Check-in</button>
-          </div>
-        </div>
-        <div class="stats">
-          <div><span>Events</span><b id="totalEvents">0</b></div>
-          <div><span>Participants</span><b id="totalParticipants">0</b></div>
-          <div><span>Check-ins</span><b id="totalCheckins">0</b></div>
-          <div><span>Signed</span><b id="totalSigned">0</b></div>
-        </div>
-        <div class="panel"><h2>Live Check-ins</h2><div id="liveFeed"></div></div>
-      </section>
-
-      <section id="events" class="page">
-        <div class="panel">
-          <h2>Create Event</h2>
-          <div class="grid">
-            <label>Event Name<input id="eventName" placeholder="Annual Conference"></label>
-            <label>Event Type<select id="eventType"><option>Conference</option><option>Meeting</option><option>Training</option><option>Workshop</option><option>Seminar</option><option>AGM</option><option>Corporate Event</option><option>University Event</option></select></label>
-            <label>Venue<input id="venue" value="Humphreys Hill House, Kisii"></label>
-            <label>Organizer<input id="organizer"></label>
-            <label>Start Date<input id="startDate" type="date"></label>
-            <label>End Date<input id="endDate" type="date"></label>
-            <label>Retention Days<input id="retention" type="number" value="365"></label>
-            <label>Consent Required<select id="consentRequired"><option>Yes</option><option>No</option></select></label>
-          </div>
-          <button class="primary" id="saveEventBtn">Save Event</button>
-        </div>
-        <div id="eventList" class="cards"></div>
-      </section>
-
-      <section id="register" class="page">
-        <div class="panel">
-          <h2>Register Participant</h2>
-          <div class="grid">
-            <label>Event<select id="participantEvent"></select></label>
-            <label>Full Name<input id="fullName"></label>
-            <label>Email<input id="email" type="email"></label>
-            <label>Phone<input id="phone"></label>
-            <label>Organization<input id="organization"></label>
-            <label>Role<select id="role"><option>Participant</option><option>Speaker</option><option>Trainer</option><option>Guest</option><option>VIP</option></select></label>
-            <label>Access Level<select id="access"><option>Standard</option><option>VIP</option><option>Staff</option></select></label>
-            <label>Consent<select id="consent"><option value="yes">Consent given</option><option value="no">No consent</option></select></label>
-          </div>
-          <button class="primary" id="registerBtn">Register & Generate QR</button>
-        </div>
-        <div id="participantList" class="cards"></div>
-      </section>
-
-      <section id="checkin" class="page">
-        <div class="panel">
-          <h2>QR Check-in</h2>
-          <label>Session Name<input id="sessionName" placeholder="Opening Session"></label>
-          <div class="actions"><button class="primary" id="startScanBtn">Start Camera</button><button id="stopScanBtn">Stop Camera</button></div>
-          <div id="reader"></div>
-        </div>
-        <div class="panel">
-          <h2>Manual Check-in</h2>
-          <label>QR Value<input id="manualQr" placeholder="HHH|EVT...|P..."></label>
-          <button class="gold" id="manualBtn">Check In</button>
-        </div>
-      </section>
-
-      <section id="signatures" class="page">
-        <div class="panel">
-          <h2>Participant Signature Capture</h2>
-          <p class="muted">Participant can sign using phone screen, mouse, or touchpad.</p>
-          <div class="grid">
-            <label>Participant<select id="signatureParticipant"></select></label>
-            <label>Purpose<select id="signaturePurpose"><option>Attendance Confirmation</option><option>Certificate Collection</option><option>Training Completion</option><option>Meal Confirmation</option></select></label>
-          </div>
-          <div class="signature-wrap"><canvas id="signatureCanvas"></canvas></div>
-          <div class="actions"><button id="clearSignatureBtn">Clear</button><button id="saveSignatureBtn" class="primary">Save Signature</button></div>
-        </div>
-        <div class="panel"><h2>Captured Signatures</h2><div id="signatureList" class="cards"></div></div>
-      </section>
-
-      <section id="badges" class="page">
-        <div class="panel"><h2>Badges</h2><button onclick="window.print()" class="primary">Print Badges</button><div id="badgeList" class="badge-grid"></div></div>
-      </section>
-
-      <section id="reports" class="page">
-        <div class="panel">
-          <h2>PDF Reports & Exports</h2>
-          <div class="actions">
-            <button id="pdfSummaryBtn" class="primary">Summary PDF</button>
-            <button id="pdfAttendanceBtn" class="gold">Attendance PDF</button>
-            <button id="pdfSignatureBtn">Signature PDF</button>
-            <button id="attendanceCsv">Attendance CSV</button>
-            <button id="participantsCsv">Participants CSV</button>
-            <button id="backupJson">Backup JSON</button>
-          </div>
-        </div>
-        <div id="attendanceTable"></div>
-      </section>
-
-      <section id="privacy" class="page">
-        <div class="panel">
-          <h2>Data Protection Centre</h2>
-          <p>Includes login/logout, consent, signatures, audit trail, retention field, exports, and local delete function.</p>
-          <button class="danger" id="clearDataBtn">Clear Local Data</button>
-        </div>
-      </section>
-    </main>
-  </section>
-  <div id="toast"></div>
-  <script src="app.js"></script>
+  <script src="login.js"></script>
 </body>
 </html>
