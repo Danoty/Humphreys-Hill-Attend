@@ -1,22 +1,37 @@
-# Humphreys Hill House AttendPro - Clean Login Version
+# Humphreys Hill House AttendPro Final
 
-This version was rebuilt cleanly so the login page appears first.
+## Features
+- Login before dashboard
+- Logout
+- Admin and scanner roles
+- Event creation
+- Participant registration
+- QR code generation
+- QR camera check-in
+- Manual check-in
+- Digital participant signature capture
+- Badge generation
+- PDF summary report
+- PDF attendance report
+- PDF signature report
+- CSV exports
+- Android installable PWA
+- GitHub Pages ready
 
 ## Login Details
-
 Admin:
-- Username: admin
-- Password: admin123
+- username: admin
+- password: admin123
 
 Scanner:
-- Username: scanner
-- Password: scan123
+- username: scanner
+- password: scan123
 
-## GitHub Pages
+## Run locally
+Open `index.html` in your browser.
 
-Upload all files to a GitHub repository and enable Pages from the main branch root.
+## Host on GitHub Pages
+Upload all files to a repository, then enable Settings > Pages > Deploy from branch > main > root.
 
-## Android Installation
-
-Open the GitHub Pages link on Chrome Android, then use:
-Menu > Add to Home screen or Install app.
+## Install on Android
+Open the GitHub Pages link in Chrome, then use Menu > Add to Home screen / Install app.

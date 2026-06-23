@@ -1,18 +1,13 @@
 {
   "name": "Humphreys Hill House AttendPro",
   "short_name": "HH AttendPro",
-  "description": "Premium event attendance management system for Humphreys Hill House.",
+  "description": "Attendance system with login, QR check-in, signatures and PDF reports.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#062c22",
   "theme_color": "#062c22",
-  "categories": [
-    "business",
-    "productivity",
-    "utilities"
-  ],
   "icons": [
     {
       "src": "assets/icon-192.png",

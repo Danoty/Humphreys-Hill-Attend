@@ -1,168 +1,40 @@
-
-const users = [
-  { username: "admin", password: "admin123", name: "Administrator", role: "Admin" },
-  { username: "scanner", password: "scan123", name: "Check-in Officer", role: "Check-in Officer" }
-];
-
-function getSessionUser() {
-  return JSON.parse(sessionStorage.getItem("hhh_logged_user") || "null");
-}
-
-function login() {
-  const username = $("loginUsername").value.trim();
-  const password = $("loginPassword").value;
-  const found = users.find(u => u.username === username && u.password === password);
-
-  if (!found) {
-    toast("Invalid login details.");
-    return;
-  }
-
-  sessionStorage.setItem("hhh_logged_user", JSON.stringify({
-    username: found.username,
-    name: found.name,
-    role: found.role
-  }));
-
-  log("LOGIN", found.name + " logged in as " + found.role);
-  applyAuth();
-  toast("Welcome, " + found.name);
-}
-
-function logout() {
-  const user = getSessionUser();
-  if (user) log("LOGOUT", user.name + " logged out.");
-  sessionStorage.removeItem("hhh_logged_user");
-  applyAuth();
-}
-
-function applyAuth() {
-  const user = getSessionUser();
-  const loginScreen = $("loginScreen");
-  const currentUser = $("currentUser");
-
-  if (!user) {
-    loginScreen.classList.remove("hidden");
-    if (currentUser) currentUser.textContent = "Not logged in";
-    return;
-  }
-
-  loginScreen.classList.add("hidden");
-  if (currentUser) currentUser.textContent = user.name + " • " + user.role;
-
-  const restrictedPages = ["events", "register", "badges", "reports", "privacy", "audit", "settings"];
-  document.querySelectorAll(".menu button").forEach(btn => {
-    if (user.role === "Check-in Officer" && restrictedPages.includes(btn.dataset.page)) {
-      btn.style.display = "none";
-    } else {
-      btn.style.display = "";
-    }
-  });
-
-  if (user.role === "Check-in Officer") {
-    goTo("checkin");
-  }
-}
-
-function requireAdmin() {
-  const user = getSessionUser();
-  if (!user) {
-    toast("Please login first.");
-    applyAuth();
-    return false;
-  }
-  if (user.role !== "Admin") {
-    toast("Admin permission required.");
-    return false;
-  }
-  return true;
-}
-
-function requireLogin() {
-  const user = getSessionUser();
-  if (!user) {
-    toast("Please login first.");
-    applyAuth();
-    return false;
-  }
-  return true;
-}
-
-let scanner=null, chart=null, deferredInstall=null;
+const USERS=[{username:"admin",password:"admin123",name:"Administrator",role:"Admin"},{username:"scanner",password:"scan123",name:"Check-in Officer",role:"Scanner"}];
 const $=id=>document.getElementById(id);
-const store={events:"hhh_events",participants:"hhh_participants",attendance:"hhh_attendance",audit:"hhh_audit",settings:"hhh_settings"};
-
-function read(k){return JSON.parse(localStorage.getItem(store[k])||"[]")}
-function write(k,v){localStorage.setItem(store[k],JSON.stringify(v))}
-function log(action,detail){const logs=read("audit");logs.unshift({time:new Date().toLocaleString(),action,detail});write("audit",logs.slice(0,500));renderAudit()}
-function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2600)}
+const KEY={events:"hhh_events_final",participants:"hhh_participants_final",attendance:"hhh_attendance_final",audit:"hhh_audit_final",signatures:"hhh_signatures_final"};
+let scanner=null,deferredPrompt=null,currentUser=null,isSigning=false,lastPoint=null;
+function get(k){return JSON.parse(localStorage.getItem(KEY[k])||"[]")}
+function set(k,v){localStorage.setItem(KEY[k],JSON.stringify(v))}
+function toast(msg){$("toast").textContent=msg;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2500)}
 function esc(v){return String(v||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
-
-document.querySelectorAll(".menu button").forEach(btn=>btn.addEventListener("click",()=>goTo(btn.dataset.page)));
-$("mobileMenu").onclick=()=>document.querySelector(".sidebar").classList.toggle("open");
-$("themeBtn").onclick=()=>document.body.classList.toggle("dark");
-$("lockBtn").onclick=secureVault;
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").style.display="inline-block"});
-$("installBtn").onclick=()=>deferredInstall&&deferredInstall.prompt();
-
-function goTo(page){document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));$(page).classList.add("active");document.querySelectorAll(".menu button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));$("pageTitle").textContent=page.charAt(0).toUpperCase()+page.slice(1);refreshAll();}
-
-function createEvent(){ if(!requireAdmin()) return;
- const e={id:"EVT-"+Date.now(),name:$("eventName").value.trim(),type:$("eventType").value,venue:$("eventVenue").value.trim(),organizer:$("eventOrganizer").value.trim(),start:$("startDate").value,end:$("endDate").value,retentionDays:$("retentionDays").value||365,consentRequired:$("consentRequired").value,createdAt:new Date().toISOString()};
- if(!e.name||!e.start||!e.end)return toast("Fill event name and dates.");
- const events=read("events");events.unshift(e);write("events",events);log("CREATE_EVENT",e.name);toast("Event created.");refreshAll();
- ["eventName","eventOrganizer","startDate","endDate"].forEach(id=>$(id).value="");
-}
-
-function registerParticipant(){ if(!requireAdmin()) return;
- const p={id:"P-"+Date.now(),eventId:$("participantEvent").value,fullName:$("fullName").value.trim(),email:$("email").value.trim(),phone:$("phone").value.trim(),organization:$("organization").value.trim(),role:$("role").value,accessLevel:$("accessLevel").value,consent:$("consent").value,qrValue:"HHH|"+$("participantEvent").value+"|P-"+Date.now(),createdAt:new Date().toISOString()};
- if(!p.eventId||!p.fullName)return toast("Select event and enter name.");
- if(p.consent==="no")return toast("Consent is required before registration.");
- const parts=read("participants");parts.unshift(p);write("participants",parts);log("REGISTER_PARTICIPANT",p.fullName);toast("Participant registered.");
- ["fullName","email","phone","organization"].forEach(id=>$(id).value="");refreshAll();
-}
-
-function checkIn(qr){ if(!requireLogin()) return;
- const bits=qr.split("|"); if(bits.length!==3||bits[0]!=="HHH")return toast("Invalid QR.");
- const [_,eventId,participantId]=bits, session=$("sessionName").value.trim()||"Main Session";
- const p=read("participants").find(x=>x.id===participantId&&x.eventId===eventId); if(!p)return toast("Participant not found.");
- const att=read("attendance"); if(att.some(a=>a.eventId===eventId&&a.participantId===participantId&&a.session===session))return toast("Duplicate check-in blocked.");
- att.unshift({id:"ATT-"+Date.now(),eventId,participantId,session,time:new Date().toLocaleString(),method:"QR/Manual",operator:"Admin"});write("attendance",att);log("CHECK_IN",p.fullName+" • "+session);$("checkinResult").textContent=p.fullName+" checked in successfully for "+session;toast("Check-in successful.");refreshAll();
-}
-function manualCheckIn(){const v=$("manualQr").value.trim();if(!v)return toast("Enter QR value.");checkIn(v);$("manualQr").value=""}
-function startScanner(){if(scanner)return toast("Scanner already running.");scanner=new Html5Qrcode("reader");scanner.start({facingMode:"environment"},{fps:10,qrbox:260},text=>checkIn(text)).catch(()=>toast("Camera failed. Use manual entry."))}
+function audit(action,detail){const logs=get("audit");logs.unshift({time:new Date().toLocaleString(),action,detail,user:currentUser?currentUser.name:"System"});set("audit",logs.slice(0,500))}
+function login(){const u=$("username").value.trim(),p=$("password").value;const found=USERS.find(x=>x.username===u&&x.password===p);if(!found){toast("Wrong username or password.");return}currentUser={username:found.username,name:found.name,role:found.role};sessionStorage.setItem("hhh_user_final",JSON.stringify(currentUser));$("loginPage").classList.add("hidden");$("appShell").classList.remove("hidden");$("currentUser").textContent=currentUser.name+" • "+currentUser.role;applyRole();audit("LOGIN",currentUser.name+" logged in");toast("Welcome "+currentUser.name);refresh();resizeSignatureCanvas()}
+function logout(){audit("LOGOUT",currentUser?currentUser.name+" logged out":"User logged out");sessionStorage.removeItem("hhh_user_final");location.reload()}
+function applyRole(){document.querySelectorAll(".admin-only,.admin-action").forEach(el=>{el.style.display=currentUser&&currentUser.role==="Admin"?"":"none"});if(currentUser&&currentUser.role==="Scanner")showPage("checkin")}
+function showPage(id){if(!currentUser){toast("Login required.");return}if(currentUser.role==="Scanner"&&!["dashboard","checkin","signatures"].includes(id)){toast("Scanner account has limited access.");return}document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));$(id).classList.add("active");document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));$("pageTitle").textContent=id.charAt(0).toUpperCase()+id.slice(1);document.querySelector(".sidebar").classList.remove("open");refresh();if(id==="signatures")setTimeout(resizeSignatureCanvas,100)}
+function createEvent(){if(currentUser.role!=="Admin"){toast("Admin permission required.");return}const e={id:"EVT-"+Date.now(),name:$("eventName").value.trim(),type:$("eventType").value,venue:$("venue").value.trim(),organizer:$("organizer").value.trim(),start:$("startDate").value,end:$("endDate").value,retention:$("retention").value,consentRequired:$("consentRequired").value};if(!e.name||!e.start||!e.end){toast("Fill event name and dates.");return}const events=get("events");events.unshift(e);set("events",events);audit("CREATE_EVENT",e.name);toast("Event saved.");["eventName","organizer","startDate","endDate"].forEach(id=>$(id).value="");refresh()}
+function registerParticipant(){if(currentUser.role!=="Admin"){toast("Admin permission required.");return}if($("consent").value!=="yes"){toast("Consent required.");return}const pid="P-"+Date.now();const p={id:pid,eventId:$("participantEvent").value,fullName:$("fullName").value.trim(),email:$("email").value.trim(),phone:$("phone").value.trim(),organization:$("organization").value.trim(),role:$("role").value,access:$("access").value,consent:"yes",qr:"HHH|"+$("participantEvent").value+"|"+pid};if(!p.eventId||!p.fullName){toast("Select event and enter name.");return}const ps=get("participants");ps.unshift(p);set("participants",ps);audit("REGISTER",p.fullName);toast("Participant registered.");["fullName","email","phone","organization"].forEach(id=>$(id).value="");refresh()}
+function checkIn(qr){const parts=qr.split("|");if(parts.length!==3||parts[0]!=="HHH"){toast("Invalid QR.");return}const eventId=parts[1],participantId=parts[2],session=$("sessionName").value.trim()||"Main Session";const p=get("participants").find(x=>x.id===participantId&&x.eventId===eventId);if(!p){toast("Participant not found.");return}const att=get("attendance");if(att.some(a=>a.eventId===eventId&&a.participantId===participantId&&a.session===session)){toast("Duplicate check-in blocked.");return}att.unshift({id:"ATT-"+Date.now(),eventId,participantId,session,time:new Date().toLocaleString(),operator:currentUser.name});set("attendance",att);audit("CHECK_IN",p.fullName+" • "+session);toast(p.fullName+" checked in.");refresh()}
+function startScanner(){if(scanner){toast("Scanner already running.");return}scanner=new Html5Qrcode("reader");scanner.start({facingMode:"environment"},{fps:10,qrbox:260},text=>checkIn(text)).catch(()=>toast("Camera failed. Use manual entry."))}
 function stopScanner(){if(scanner)scanner.stop().then(()=>{scanner.clear();scanner=null})}
-
-function refreshAll(){renderStats();renderEvents();renderOptions();renderParticipants();renderBadges();renderReports();renderAudit();renderChart();renderFeed();}
-function renderStats(){const e=read("events"),p=read("participants"),a=read("attendance");$("statEvents").textContent=e.length;$("statParticipants").textContent=p.length;$("statCheckins").textContent=a.length;$("statRate").textContent=p.length?Math.round(a.length/p.length*100)+"%":"0%";}
-function renderEvents(){const events=read("events");$("eventCards").innerHTML=events.length?events.map(e=>`<div class="event-card"><h3>${esc(e.name)}</h3><p class="meta">${esc(e.type)} • ${esc(e.venue)}</p><p>${esc(e.start)} to ${esc(e.end)}</p><p class="meta">Organizer: ${esc(e.organizer||"N/A")} • Retention: ${esc(e.retentionDays)} days</p></div>`).join(""):"<p>No events yet.</p>";}
-function renderOptions(){const events=read("events");$("participantEvent").innerHTML=events.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join("");}
-function renderParticipants(){const ps=read("participants"), ev=read("events");$("participantCards").innerHTML=ps.length?ps.map(p=>{const e=ev.find(x=>x.id===p.eventId);setTimeout(()=>qr("qr"+p.id,p.qrValue),20);return `<div class="participant-card"><h3>${esc(p.fullName)}</h3><p class="meta">${esc(p.role)} • ${esc(p.accessLevel)}</p><p>${esc(e?e.name:"Unknown event")}</p><p class="meta">${esc(p.organization)} • ${esc(p.phone)}</p><canvas class="qrCanvas" id="qr${p.id}"></canvas><p class="meta">${esc(p.qrValue)}</p><button onclick="printBadge('${p.id}')">Print Badge</button></div>`}).join(""):"<p>No participants yet.</p>";}
-function renderBadges(){const ps=read("participants"),ev=read("events");$("badgeStudio").innerHTML=ps.map(p=>{const e=ev.find(x=>x.id===p.eventId);setTimeout(()=>qr("bqr"+p.id,p.qrValue),20);return `<div class="badge"><div class="logoMark">HH</div><h2>${esc(p.fullName)}</h2><p>${esc(p.role)} • ${esc(p.organization)}</p><strong>${esc(e?e.name:"Event")}</strong><canvas id="bqr${p.id}"></canvas><p>${esc(p.qrValue)}</p></div>`}).join("")||"<p>No badges yet.</p>";}
-function qr(id,value){const el=$(id);if(el&&!el.dataset.done){QRCode.toCanvas(el,value,{width:120});el.dataset.done="1"}}
-function renderReports(){const a=read("attendance"),ps=read("participants"),ev=read("events");$("attendanceTable").innerHTML=`<table><tr><th>Name</th><th>Event</th><th>Session</th><th>Time</th><th>Operator</th></tr>${a.map(r=>{const p=ps.find(x=>x.id===r.participantId),e=ev.find(x=>x.id===r.eventId);return `<tr><td>${esc(p?p.fullName:"Unknown")}</td><td>${esc(e?e.name:"Unknown")}</td><td>${esc(r.session)}</td><td>${esc(r.time)}</td><td>${esc(r.operator)}</td></tr>`}).join("")}</table>`;}
-function renderAudit(){const logs=read("audit");$("auditLogs").innerHTML=`<table><tr><th>Time</th><th>Action</th><th>Detail</th></tr>${logs.map(l=>`<tr><td>${esc(l.time)}</td><td>${esc(l.action)}</td><td>${esc(l.detail)}</td></tr>`).join("")}</table>`}
-function renderFeed(){const a=read("attendance").slice(0,5),ps=read("participants");$("liveFeed").innerHTML=a.map(r=>{const p=ps.find(x=>x.id===r.participantId);return `<div class="feed-item"><div><b>${esc(p?p.fullName:"Unknown")}</b><small>${esc(r.session)}</small></div><small>${esc(r.time)}</small></div>`}).join("")||"<p>No live check-ins yet.</p>";}
-function renderChart(){const a=read("attendance");const labels=[...new Set(a.map(x=>x.session))].slice(0,8);const data=labels.map(l=>a.filter(x=>x.session===l).length);const ctx=$("attendanceChart");if(!ctx)return;if(chart)chart.destroy();chart=new Chart(ctx,{type:"line",data:{labels:labels.length?labels:["No data"],datasets:[{label:"Check-ins",data:data.length?data:[0],tension:.35,fill:true}]},options:{responsive:true,plugins:{legend:{display:false}}}});}
-function rowsToCSV(rows){return rows.map(r=>r.map(v=>`"${String(v||"").replaceAll('"','""')}"`).join(",")).join("\n")}
+function resizeSignatureCanvas(){const c=$("signatureCanvas");if(!c)return;const ratio=Math.max(window.devicePixelRatio||1,1);const rect=c.getBoundingClientRect();c.width=Math.floor(rect.width*ratio);c.height=Math.floor(rect.height*ratio);const ctx=c.getContext("2d");ctx.scale(ratio,ratio);ctx.lineWidth=2.6;ctx.lineCap="round";ctx.strokeStyle="#062c22";ctx.fillStyle="#fff";ctx.fillRect(0,0,rect.width,rect.height)}
+function pointFromEvent(e){const c=$("signatureCanvas"),r=c.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top}}
+function startSign(e){e.preventDefault();isSigning=true;lastPoint=pointFromEvent(e)}
+function drawSign(e){if(!isSigning)return;e.preventDefault();const ctx=$("signatureCanvas").getContext("2d"),p=pointFromEvent(e);ctx.beginPath();ctx.moveTo(lastPoint.x,lastPoint.y);ctx.lineTo(p.x,p.y);ctx.stroke();lastPoint=p}
+function endSign(){isSigning=false;lastPoint=null}
+function clearSignature(){resizeSignatureCanvas()}
+function saveSignature(){const pid=$("signatureParticipant").value;if(!pid){toast("Select participant.");return}const participant=get("participants").find(p=>p.id===pid);const img=$("signatureCanvas").toDataURL("image/png");const sig={id:"SIG-"+Date.now(),participantId:pid,eventId:participant.eventId,purpose:$("signaturePurpose").value,image:img,time:new Date().toLocaleString(),operator:currentUser.name};const signatures=get("signatures");signatures.unshift(sig);set("signatures",signatures);audit("SIGNATURE_CAPTURED",participant.fullName+" • "+sig.purpose);toast("Signature saved.");clearSignature();refresh()}
+function refresh(){const events=get("events"),ps=get("participants"),att=get("attendance"),sigs=get("signatures");$("totalEvents").textContent=events.length;$("totalParticipants").textContent=ps.length;$("totalCheckins").textContent=att.length;$("totalSigned").textContent=sigs.length;$("participantEvent").innerHTML=events.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join("");$("signatureParticipant").innerHTML=ps.map(p=>`<option value="${p.id}">${esc(p.fullName)} - ${esc(p.organization)}</option>`).join("");$("eventList").innerHTML=events.map(e=>`<div><h3>${esc(e.name)}</h3><p class="meta">${esc(e.type)} • ${esc(e.venue)}</p><p>${esc(e.start)} to ${esc(e.end)}</p><p class="meta">Organizer: ${esc(e.organizer)} • Retention: ${esc(e.retention)} days</p></div>`).join("")||"<p>No events yet.</p>";$("participantList").innerHTML=ps.map(p=>{setTimeout(()=>makeQR("qr"+p.id,p.qr),20);const e=events.find(x=>x.id===p.eventId);return`<div><h3>${esc(p.fullName)}</h3><p class="meta">${esc(p.role)} • ${esc(p.access)}</p><p>${esc(e?e.name:"Unknown event")}</p><p class="meta">${esc(p.organization)} • ${esc(p.phone)}</p><canvas id="qr${p.id}"></canvas><p class="meta">${esc(p.qr)}</p></div>`}).join("")||"<p>No participants yet.</p>";$("badgeList").innerHTML=ps.map(p=>{setTimeout(()=>makeQR("bqr"+p.id,p.qr),20);const e=events.find(x=>x.id===p.eventId);return`<div class="badge"><div class="logo">HH</div><h2>${esc(p.fullName)}</h2><p>${esc(p.role)} • ${esc(p.organization)}</p><b>${esc(e?e.name:"Event")}</b><canvas id="bqr${p.id}"></canvas><p class="meta">${esc(p.qr)}</p></div>`}).join("")||"<p>No badges yet.</p>";$("liveFeed").innerHTML=att.slice(0,6).map(a=>{const p=ps.find(x=>x.id===a.participantId);return`<p><b>${esc(p?p.fullName:"Unknown")}</b> checked in for ${esc(a.session)} <span class="meta">${esc(a.time)}</span></p>`}).join("")||"<p>No check-ins yet.</p>";$("signatureList").innerHTML=sigs.map(s=>{const p=ps.find(x=>x.id===s.participantId);return`<div><h3>${esc(p?p.fullName:"Unknown")}</h3><p class="meta">${esc(s.purpose)} • ${esc(s.time)}</p><img class="sig-img" src="${s.image}"><p class="meta">Captured by ${esc(s.operator)}</p></div>`}).join("")||"<p>No signatures captured yet.</p>";$("attendanceTable").innerHTML=`<table><tr><th>Name</th><th>Event</th><th>Session</th><th>Time</th><th>Operator</th><th>Signed?</th></tr>${att.map(a=>{const p=ps.find(x=>x.id===a.participantId),e=events.find(x=>x.id===a.eventId);const signed=sigs.some(s=>s.participantId===a.participantId);return`<tr><td>${esc(p?p.fullName:"Unknown")}</td><td>${esc(e?e.name:"Unknown")}</td><td>${esc(a.session)}</td><td>${esc(a.time)}</td><td>${esc(a.operator)}</td><td>${signed?"Yes":"No"}</td></tr>`}).join("")}</table>`}
+function makeQR(id,value){const el=$(id);if(el&&!el.dataset.done){QRCode.toCanvas(el,value,{width:120});el.dataset.done="1"}}
+function csv(rows){return rows.map(r=>r.map(v=>`"${String(v||"").replaceAll('"','""')}"`).join(",")).join("\n")}
 function download(name,content,type="text/csv"){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
-function downloadAttendanceCSV(){ if(!requireAdmin()) return;const a=read("attendance"),ps=read("participants"),ev=read("events");download("humphreys_attendance.csv",rowsToCSV([["Name","Event","Session","Time","Operator"],...a.map(r=>{const p=ps.find(x=>x.id===r.participantId),e=ev.find(x=>x.id===r.eventId);return[p?.fullName,e?.name,r.session,r.time,r.operator]})]));}
-function downloadParticipantsCSV(){ if(!requireAdmin()) return;const ps=read("participants"),ev=read("events");download("humphreys_participants.csv",rowsToCSV([["Name","Event","Email","Phone","Organization","Role","Access","Consent","QR"],...ps.map(p=>[p.fullName,ev.find(e=>e.id===p.eventId)?.name,p.email,p.phone,p.organization,p.role,p.accessLevel,p.consent,p.qrValue])]));}
-function downloadEventsCSV(){ if(!requireAdmin()) return;download("humphreys_events.csv",rowsToCSV([["Name","Type","Venue","Organizer","Start","End","Retention"],...read("events").map(e=>[e.name,e.type,e.venue,e.organizer,e.start,e.end,e.retentionDays])]));}
-function downloadJSON(){ if(!requireAdmin()) return;download("humphreys_backup.json",JSON.stringify({events:read("events"),participants:read("participants"),attendance:read("attendance"),audit:read("audit")},null,2),"application/json")}
-function clearAllData(){ if(!requireAdmin()) return;if(confirm("Delete all local demo data?")){Object.values(store).forEach(k=>localStorage.removeItem(k));refreshAll();toast("Local data deleted.")}}
-function saveSettings(){ if(!requireAdmin()) return;toast("Settings saved.");log("SAVE_SETTINGS","Brand settings updated.")}
-async function secureVault(){ if(!requireAdmin()) return;const pass=prompt("Set/enter a vault passphrase for this browser demo:");if(!pass)return;const data=new TextEncoder().encode(JSON.stringify({events:read("events"),participants:read("participants"),attendance:read("attendance")}));const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(pass));const key=await crypto.subtle.importKey("raw",digest,{name:"AES-GCM"},false,["encrypt"]);const iv=crypto.getRandomValues(new Uint8Array(12));const encrypted=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,data);localStorage.setItem("hhh_vault",JSON.stringify({iv:Array.from(iv),data:Array.from(new Uint8Array(encrypted))}));log("SECURE_VAULT","Encrypted local backup created.");toast("Encrypted vault backup created.");}
-function printBadge(id){goTo("badges");setTimeout(()=>window.print(),300)}
-function printAllBadges(){ if(!requireAdmin()) return;window.print()}
-if("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(()=>{});
-refreshAll();
-
-
-document.addEventListener("keydown", function(e) {
-  if (e.key === "Enter" && !$("loginScreen").classList.contains("hidden")) {
-    login();
-  }
-});
-
-applyAuth();
+function exportAttendance(){const ev=get("events"),ps=get("participants"),att=get("attendance"),sigs=get("signatures");download("attendance.csv",csv([["Name","Event","Session","Time","Operator","Signed"],...att.map(a=>[ps.find(p=>p.id===a.participantId)?.fullName,ev.find(e=>e.id===a.eventId)?.name,a.session,a.time,a.operator,sigs.some(s=>s.participantId===a.participantId)?"Yes":"No"])]))}
+function exportParticipants(){const ev=get("events"),ps=get("participants");download("participants.csv",csv([["Name","Event","Email","Phone","Organization","Role","QR"],...ps.map(p=>[p.fullName,ev.find(e=>e.id===p.eventId)?.name,p.email,p.phone,p.organization,p.role,p.qr])]))}
+function backup(){download("backup.json",JSON.stringify({events:get("events"),participants:get("participants"),attendance:get("attendance"),signatures:get("signatures"),audit:get("audit")},null,2),"application/json")}
+function clearData(){if(confirm("Delete all local data?")){Object.values(KEY).forEach(k=>localStorage.removeItem(k));refresh();toast("Data cleared.")}}
+function pdfHeader(doc,title){doc.setFillColor(6,44,34);doc.rect(0,0,210,28,"F");doc.setTextColor(242,210,126);doc.setFontSize(16);doc.text("Humphreys Hill House AttendPro",14,12);doc.setTextColor(255,255,255);doc.setFontSize(10);doc.text(title,14,20);doc.setTextColor(20,32,27)}
+function generateSummaryPDF(){const{jsPDF}=window.jspdf,doc=new jsPDF();const events=get("events"),ps=get("participants"),att=get("attendance"),sigs=get("signatures");pdfHeader(doc,"Summary Report");doc.setFontSize(20);doc.text("Event Attendance Summary",14,45);doc.setFontSize(12);doc.text("Generated: "+new Date().toLocaleString(),14,55);doc.text("Generated by: "+currentUser.name,14,63);doc.text("Total Events: "+events.length,14,80);doc.text("Total Participants: "+ps.length,14,90);doc.text("Total Check-ins: "+att.length,14,100);doc.text("Total Signatures: "+sigs.length,14,110);let y=130;doc.setFontSize(14);doc.text("Events",14,y);y+=8;doc.setFontSize(10);events.slice(0,20).forEach(e=>{doc.text(`${e.name} | ${e.type} | ${e.start} - ${e.end}`,14,y);y+=7;if(y>280){doc.addPage();pdfHeader(doc,"Summary Report");y=40}});doc.save("humphreys_summary_report.pdf");audit("PDF_REPORT","Summary PDF generated")}
+function generateAttendancePDF(){const{jsPDF}=window.jspdf,doc=new jsPDF();const events=get("events"),ps=get("participants"),att=get("attendance"),sigs=get("signatures");pdfHeader(doc,"Attendance Report");doc.setFontSize(18);doc.text("Attendance Register",14,45);doc.setFontSize(10);doc.text("Generated: "+new Date().toLocaleString(),14,53);let y=66;doc.setFontSize(9);doc.text("No.",14,y);doc.text("Name",25,y);doc.text("Event",72,y);doc.text("Session",125,y);doc.text("Time",158,y);doc.text("Sign",190,y);y+=5;doc.line(14,y,198,y);y+=7;att.forEach((a,i)=>{const p=ps.find(x=>x.id===a.participantId),e=events.find(x=>x.id===a.eventId),signed=sigs.some(s=>s.participantId===a.participantId)?"Yes":"No";doc.text(String(i+1),14,y);doc.text(doc.splitTextToSize(p?p.fullName:"Unknown",42),25,y);doc.text(doc.splitTextToSize(e?e.name:"Unknown",48),72,y);doc.text(doc.splitTextToSize(a.session,28),125,y);doc.text(doc.splitTextToSize(a.time,28),158,y);doc.text(signed,190,y);y+=12;if(y>280){doc.addPage();pdfHeader(doc,"Attendance Report");y=42}});doc.save("humphreys_attendance_report.pdf");audit("PDF_REPORT","Attendance PDF generated")}
+function generateSignaturePDF(){const{jsPDF}=window.jspdf,doc=new jsPDF();const events=get("events"),ps=get("participants"),sigs=get("signatures");pdfHeader(doc,"Signature Report");let y=45;doc.setFontSize(18);doc.text("Participant Signature Register",14,y);y+=12;if(!sigs.length){doc.setFontSize(12);doc.text("No signatures captured.",14,y)}sigs.forEach((s,i)=>{const p=ps.find(x=>x.id===s.participantId),e=events.find(x=>x.id===s.eventId);doc.setFontSize(12);doc.text(`${i+1}. ${p?p.fullName:"Unknown"}`,14,y);y+=7;doc.setFontSize(9);doc.text(`Event: ${e?e.name:"Unknown"} | Purpose: ${s.purpose} | Time: ${s.time}`,14,y);y+=5;try{doc.addImage(s.image,"PNG",14,y,80,24)}catch(err){}y+=34;if(y>260){doc.addPage();pdfHeader(doc,"Signature Report");y=42}});doc.save("humphreys_signature_report.pdf");audit("PDF_REPORT","Signature PDF generated")}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e});
+function installApp(){if(deferredPrompt){deferredPrompt.prompt()}else{toast("On Android Chrome: menu → Add to Home screen.")}}
+document.addEventListener("DOMContentLoaded",()=>{$("loginBtn").onclick=login;$("logoutBtn").onclick=logout;$("saveEventBtn").onclick=createEvent;$("registerBtn").onclick=registerParticipant;$("startScanBtn").onclick=startScanner;$("stopScanBtn").onclick=stopScanner;$("manualBtn").onclick=()=>{if($("manualQr").value.trim())checkIn($("manualQr").value.trim())};$("attendanceCsv").onclick=exportAttendance;$("participantsCsv").onclick=exportParticipants;$("backupJson").onclick=backup;$("clearDataBtn").onclick=clearData;$("installBtn").onclick=installApp;$("menuBtn").onclick=()=>document.querySelector(".sidebar").classList.toggle("open");$("clearSignatureBtn").onclick=clearSignature;$("saveSignatureBtn").onclick=saveSignature;$("pdfSummaryBtn").onclick=generateSummaryPDF;$("pdfAttendanceBtn").onclick=generateAttendancePDF;$("pdfSignatureBtn").onclick=generateSignaturePDF;document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>showPage(b.dataset.page));document.addEventListener("keydown",e=>{if(e.key==="Enter"&&!$("loginPage").classList.contains("hidden"))login()});const canvas=$("signatureCanvas");canvas.addEventListener("mousedown",startSign);canvas.addEventListener("mousemove",drawSign);window.addEventListener("mouseup",endSign);canvas.addEventListener("touchstart",startSign,{passive:false});canvas.addEventListener("touchmove",drawSign,{passive:false});window.addEventListener("touchend",endSign);window.addEventListener("resize",resizeSignatureCanvas);const saved=sessionStorage.getItem("hhh_user_final");if(saved){currentUser=JSON.parse(saved);$("loginPage").classList.add("hidden");$("appShell").classList.remove("hidden");$("currentUser").textContent=currentUser.name+" • "+currentUser.role;applyRole();refresh();resizeSignatureCanvas()}});
